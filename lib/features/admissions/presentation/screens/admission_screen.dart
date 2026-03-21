@@ -50,10 +50,15 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
     '1ère Primaire',
     '2ème Primaire',
     '3ème Primaire',
+    '4ème Primaire',
+    '5ème Primaire',
+    '6ème Primaire',
+    '7ème Secondaire',
+    '8ème Secondaire',
     '1ère Humanité',
     '2ème Humanité',
-    '3ème Math-Physique',
-    '3ème Littéraire',
+    '3ème Humanité',
+    '4ème Humanité',
   ];
   static const List<String> _liens = [
     'Père',
@@ -156,11 +161,9 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
     try {
       final repo = ref.read(admissionRepositoryProvider);
 
-      // Concaténation des champs éclatés (Avenue + Quartier + Commune)
       final adresseComplete =
           "${_avenueCtrl.text.trim()}, Q. ${_quartierCtrl.text.trim()}, C. $_selectedCommune";
 
-      // Concaténation Urgence (Nom + Numéro)
       final urgenceComplete =
           "${_urgenceNomCtrl.text.trim()} - $_countryCodeUrgence ${_urgencePhoneCtrl.text.trim()}";
 
