@@ -398,14 +398,14 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
         if (isMobile) ...[
           CustomTextField(
             controller: _nomCtrl,
-            label: "Nom de famille *",
+            label: "Nom de famille ",
             hint: "Ex: KABUYA",
             prefixIcon: Icons.person,
           ),
           const SizedBox(height: 16),
           CustomTextField(
             controller: _prenomCtrl,
-            label: "Post-nom & Prénoms *",
+            label: "Post-nom & Prénoms",
             hint: "Ex: Jean-Luc",
             prefixIcon: Icons.person_outline,
           ),
@@ -440,7 +440,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
               Expanded(
                 child: CustomTextField(
                   controller: _nomCtrl,
-                  label: "Nom de famille *",
+                  label: "Nom de famille ",
                   hint: "Ex: KABUYA",
                   prefixIcon: Icons.person,
                 ),
@@ -449,7 +449,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
               Expanded(
                 child: CustomTextField(
                   controller: _prenomCtrl,
-                  label: "Post-nom & Prénoms *",
+                  label: "Post-nom & Prénoms ",
                   hint: "Ex: Jean-Luc",
                   prefixIcon: Icons.person_outline,
                 ),
@@ -501,7 +501,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "2. Cursus Académique",
+          "2. Cursus scolaire",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -593,7 +593,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
         if (isMobile) ...[
           CustomTextField(
             controller: _tuteurNomCtrl,
-            label: "Nom complet du responsable *",
+            label: "Nom complet du responsable ",
             hint: "Ex: M. KABUYA Paul",
             prefixIcon: Icons.family_restroom,
           ),
@@ -618,7 +618,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                 flex: 2,
                 child: CustomTextField(
                   controller: _tuteurNomCtrl,
-                  label: "Nom complet du responsable *",
+                  label: "Nom complet du responsable ",
                   hint: "Ex: M. KABUYA Paul",
                   prefixIcon: Icons.family_restroom,
                 ),
