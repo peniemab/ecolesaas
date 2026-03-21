@@ -32,9 +32,9 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   // Controllers - Step 3
   final _tuteurNomCtrl = TextEditingController();
   String _selectedLien = 'Père';
-  String _countryCode = '+243'; 
+  String _countryCode = '+243';
   final _tuteurPhoneCtrl = TextEditingController();
-  
+
   // Nouvelle adresse scindée
   final _avenueCtrl = TextEditingController();
   final _quartierCtrl = TextEditingController();
@@ -47,17 +47,48 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   final _urgenceMaladieCtrl = TextEditingController();
 
   static const List<String> _niveaux = [
-    '1ère Primaire', '2ème Primaire', '3ème Primaire', 
-    '1ère Humanité', '2ème Humanité', '3ème Math-Physique', '3ème Littéraire'
+    '1ère Primaire',
+    '2ème Primaire',
+    '3ème Primaire',
+    '1ère Humanité',
+    '2ème Humanité',
+    '3ème Math-Physique',
+    '3ème Littéraire',
   ];
-  static const List<String> _liens = ['Père', 'Mère', 'Tuteur Légal', 'Oncle / Tante', 'Grand-Parent', 'Autre'];
-  
-  // Les 24 Communes de Kinshasa
+  static const List<String> _liens = [
+    'Père',
+    'Mère',
+    'Tuteur Légal',
+    'Oncle / Tante',
+    'Grand-Parent',
+    'Autre',
+  ];
+
   static const List<String> _communesKinshasa = [
-    'Bandalungwa', 'Barumbu', 'Bumbu', 'Gombe', 'Kalamu', 'Kasa-Vubu', 'Kimbanseke',
-    'Kinshasa', 'Kintambo', 'Kisenso', 'Lemba', 'Limete', 'Lingwala', 'Makala',
-    'Maluku', 'Masina', 'Matete', 'Mont-Ngafula', 'Ndjili', 'Ngaba', 'Ngaliema',
-    'Ngiri-Ngiri', 'Nsele', 'Selembao'
+    'Bandalungwa',
+    'Barumbu',
+    'Bumbu',
+    'Gombe',
+    'Kalamu',
+    'Kasa-Vubu',
+    'Kimbanseke',
+    'Kinshasa',
+    'Kintambo',
+    'Kisenso',
+    'Lemba',
+    'Limete',
+    'Lingwala',
+    'Makala',
+    'Maluku',
+    'Masina',
+    'Matete',
+    'Mont-Ngafula',
+    'Ndjili',
+    'Ngaba',
+    'Ngaliema',
+    'Ngiri-Ngiri',
+    'Nsele',
+    'Selembao',
   ];
 
   @override
@@ -80,7 +111,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().subtract(const Duration(days: 365 * 6)), // Âge moyen de départ
+      initialDate: DateTime.now().subtract(const Duration(days: 365 * 6)),
       firstDate: DateTime(1990),
       lastDate: DateTime.now(),
       helpText: 'SÉLECTIONNEZ LA DATE DE NAISSANCE',
@@ -89,7 +120,8 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
     );
     if (picked != null) {
       setState(() {
-        _dateNaissCtrl.text = "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _dateNaissCtrl.text =
+            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
       });
     }
   }
@@ -110,7 +142,12 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
 
   Future<void> _submitForm() async {
     if (_nomCtrl.text.isEmpty || _prenomCtrl.text.isEmpty) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Le nom et prénom de l\'élève sont requis.')));
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Le nom et prénom de l\'élève sont requis.'),
+          ),
+        );
       return;
     }
 
@@ -118,12 +155,14 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
 
     try {
       final repo = ref.read(admissionRepositoryProvider);
-      
+
       // Concaténation des champs éclatés (Avenue + Quartier + Commune)
-      final adresseComplete = "${_avenueCtrl.text.trim()}, Q. ${_quartierCtrl.text.trim()}, C. $_selectedCommune";
-      
+      final adresseComplete =
+          "${_avenueCtrl.text.trim()}, Q. ${_quartierCtrl.text.trim()}, C. $_selectedCommune";
+
       // Concaténation Urgence (Nom + Numéro)
-      final urgenceComplete = "${_urgenceNomCtrl.text.trim()} - $_countryCodeUrgence ${_urgencePhoneCtrl.text.trim()}";
+      final urgenceComplete =
+          "${_urgenceNomCtrl.text.trim()} - $_countryCodeUrgence ${_urgencePhoneCtrl.text.trim()}";
 
       final result = await repo.registerStudent(
         nom: _nomCtrl.text.trim(),
@@ -149,25 +188,48 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
           context: context,
           barrierDismissible: false,
           builder: (_) => AlertDialog(
-            title: const Text('🎉 Inscription Réussie !', textAlign: TextAlign.center),
+            title: const Text(
+              'Inscription Réussie !',
+              textAlign: TextAlign.center,
+            ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.check_circle, color: Colors.green, size: 64),
                 const SizedBox(height: 16),
-                Text('Élève : ${_prenomCtrl.text} ${_nomCtrl.text}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'Élève : ${_prenomCtrl.text} ${_nomCtrl.text}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                Text('Matricule généré : $matricule', style: const TextStyle(fontSize: 18, color: AppColors.primary, fontWeight: FontWeight.bold)),
-                Text('Classe auto-assignée : $classe', style: const TextStyle(fontSize: 16, color: AppColors.secondary, fontWeight: FontWeight.bold)),
+                Text(
+                  'Matricule : $matricule',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Classe : $classe',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: AppColors.secondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                const Text("Le reçu PDF est prêt à être imprimé.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                const Text(
+                  "reçu PDF prêt à imprimé.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
               ],
             ),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context); // Fermer
-                  // Réinitialiser le formulaire
+                  Navigator.pop(context);
                   setState(() {
                     _currentStep = 0;
                     _nomCtrl.clear();
@@ -189,17 +251,29 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.print),
                 label: const Text("Générer le Reçu PDF"),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Le Module d\'impression PDF sera câblé dans la prochaine étape !')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Le Module d\'impression PDF sera câblé dans la prochaine étape !',
+                      ),
+                    ),
+                  );
                 },
               ),
             ],
-          )
+          ),
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -212,9 +286,19 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Nouvelle Inscription", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const Text(
+            "Nouvelle Inscription",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text("Assistée par l'algorithme d'auto-dispatching et équilibrage.", style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+          const Text(
+            "Assistée par l'algorithme d'auto-dispatching et équilibrage.",
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+          ),
           const SizedBox(height: 32),
 
           Container(
@@ -222,7 +306,13 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 16, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,7 +326,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                 _buildActionButtons(),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -262,55 +352,105 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
 
   Widget _buildCurrentStepContent() {
     switch (_currentStep) {
-      case 0: return _buildStep1Identite();
-      case 1: return _buildStep2Scolarite();
-      case 2: return _buildStep3Tuteur();
-      default: return const SizedBox.shrink();
+      case 0:
+        return _buildStep1Identite();
+      case 1:
+        return _buildStep2Scolarite();
+      case 2:
+        return _buildStep3Tuteur();
+      default:
+        return const SizedBox.shrink();
     }
   }
 
   Widget _buildStep1Identite() {
     final isMobile = Responsive.isMobile(context);
-    
+
     // Sélecteur de Date intelligent
     final dateWidget = GestureDetector(
       onTap: () => _selectDate(context),
       child: AbsorbPointer(
-        child: CustomTextField(controller: _dateNaissCtrl, label: "Date de naissance", hint: "Cliquez pour choisir (JJ/MM/AAAA)", prefixIcon: Icons.calendar_today),
+        child: CustomTextField(
+          controller: _dateNaissCtrl,
+          label: "Date de naissance",
+          hint: "Cliquez pour choisir (JJ/MM/AAAA)",
+          prefixIcon: Icons.calendar_today,
+        ),
       ),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("1. Identité de l'Élève", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        const Text(
+          "1. Identité de l'Élève",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
         const SizedBox(height: 24),
-        
+
         if (isMobile) ...[
-          CustomTextField(controller: _nomCtrl, label: "Nom de famille *", hint: "Ex: KABUYA", prefixIcon: Icons.person),
+          CustomTextField(
+            controller: _nomCtrl,
+            label: "Nom de famille *",
+            hint: "Ex: KABUYA",
+            prefixIcon: Icons.person,
+          ),
           const SizedBox(height: 16),
-          CustomTextField(controller: _prenomCtrl, label: "Prénoms & Post-nom *", hint: "Ex: Jean-Luc", prefixIcon: Icons.person_outline),
+          CustomTextField(
+            controller: _prenomCtrl,
+            label: "Post-nom & Prénoms *",
+            hint: "Ex: Jean-Luc",
+            prefixIcon: Icons.person_outline,
+          ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: _selectedSexe,
             decoration: InputDecoration(
               labelText: "Sexe / Genre",
               prefixIcon: const Icon(Icons.wc, color: AppColors.textSecondary),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            items: ['Masculin', 'Féminin'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+            items: [
+              'Masculin',
+              'Féminin',
+            ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
             onChanged: (val) => setState(() => _selectedSexe = val!),
           ),
           const SizedBox(height: 16),
           dateWidget,
           const SizedBox(height: 16),
-          CustomTextField(controller: _lieuNaissCtrl, label: "Lieu de naissance", hint: "Ex: Kinshasa", prefixIcon: Icons.location_city),
+          CustomTextField(
+            controller: _lieuNaissCtrl,
+            label: "Lieu de naissance",
+            hint: "Ex: Kinshasa",
+            prefixIcon: Icons.location_city,
+          ),
         ] else ...[
           Row(
             children: [
-              Expanded(child: CustomTextField(controller: _nomCtrl, label: "Nom de famille *", hint: "Ex: KABUYA", prefixIcon: Icons.person)),
+              Expanded(
+                child: CustomTextField(
+                  controller: _nomCtrl,
+                  label: "Nom de famille *",
+                  hint: "Ex: KABUYA",
+                  prefixIcon: Icons.person,
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(child: CustomTextField(controller: _prenomCtrl, label: "Prénoms & Post-nom *", hint: "Ex: Jean-Luc", prefixIcon: Icons.person_outline)),
+              Expanded(
+                child: CustomTextField(
+                  controller: _prenomCtrl,
+                  label: "Post-nom & Prénoms *",
+                  hint: "Ex: Jean-Luc",
+                  prefixIcon: Icons.person_outline,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -321,17 +461,31 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                   value: _selectedSexe,
                   decoration: InputDecoration(
                     labelText: "Sexe / Genre",
-                    prefixIcon: const Icon(Icons.wc, color: AppColors.textSecondary),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    prefixIcon: const Icon(
+                      Icons.wc,
+                      color: AppColors.textSecondary,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  items: ['Masculin', 'Féminin'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  items: ['Masculin', 'Féminin']
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
                   onChanged: (val) => setState(() => _selectedSexe = val!),
-                )
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(child: dateWidget),
               const SizedBox(width: 16),
-              Expanded(child: CustomTextField(controller: _lieuNaissCtrl, label: "Lieu de naissance", hint: "Ex: Kinshasa", prefixIcon: Icons.location_city)),
+              Expanded(
+                child: CustomTextField(
+                  controller: _lieuNaissCtrl,
+                  label: "Lieu de naissance",
+                  hint: "Ex: Kinshasa",
+                  prefixIcon: Icons.location_city,
+                ),
+              ),
             ],
           ),
         ],
@@ -343,16 +497,31 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("2. Cursus Académique", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        const Text(
+          "2. Cursus Académique",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
           child: const Row(
             children: [
               Icon(Icons.auto_awesome, color: Colors.blue),
               SizedBox(width: 12),
-              Expanded(child: Text("La section (A, B, C...) sera assignée automatiquement par l'algorithme d'équilibrage.", style: TextStyle(color: Colors.blue))),
+              Expanded(
+                child: Text(
+                  "La section (A, B) sera assignée automatiquement par l'algorithme d'équilibrage.",
+                  style: TextStyle(color: Colors.blue),
+                ),
+              ),
             ],
           ),
         ),
@@ -360,15 +529,25 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
         DropdownButtonFormField<String>(
           value: _selectedNiveau,
           decoration: InputDecoration(
-            labelText: "Niveau Académique (Classe générale)",
-            prefixIcon: const Icon(Icons.school, color: AppColors.textSecondary),
+            labelText: "Niveau scolaire",
+            prefixIcon: const Icon(
+              Icons.school,
+              color: AppColors.textSecondary,
+            ),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          items: _niveaux.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+          items: _niveaux
+              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+              .toList(),
           onChanged: (val) => setState(() => _selectedNiveau = val!),
         ),
         const SizedBox(height: 16),
-        CustomTextField(controller: _ecoleProvCtrl, label: "École de provenance (Si nouvel arrivant)", hint: "Ex: C.S. Les Loupiots", prefixIcon: Icons.account_balance),
+        CustomTextField(
+          controller: _ecoleProvCtrl,
+          label: "École de provenance (Si nouvel arrivant)",
+          hint: "Ex: C.S. Les Loupiots",
+          prefixIcon: Icons.account_balance,
+        ),
       ],
     );
   }
@@ -378,35 +557,69 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
 
     // Déclaration des champs de communes mutualisés
     final communeDropdown = DropdownButtonFormField<String>(
-      menuMaxHeight: 400, // Important pour voir les 24 communes sans casser l'interface
+      menuMaxHeight:
+          400, // Important pour voir les 24 communes sans casser l'interface
       value: _selectedCommune,
-      decoration: InputDecoration(labelText: "Commune (Ville de Kinshasa)", prefixIcon: const Icon(Icons.location_city, color: AppColors.textSecondary), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-      items: _communesKinshasa.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+      decoration: InputDecoration(
+        labelText: "Commune (Ville de Kinshasa)",
+        prefixIcon: const Icon(
+          Icons.location_city,
+          color: AppColors.textSecondary,
+        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+      items: _communesKinshasa
+          .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+          .toList(),
       onChanged: (val) => setState(() => _selectedCommune = val!),
     );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text("3. Tuteur Légal & Contact", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+        const Text(
+          "3. Tuteur Légal & Contact",
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
+        ),
         const SizedBox(height: 24),
-        
+
         if (isMobile) ...[
-          CustomTextField(controller: _tuteurNomCtrl, label: "Nom complet du responsable *", hint: "Ex: M. KABUYA Paul", prefixIcon: Icons.family_restroom),
+          CustomTextField(
+            controller: _tuteurNomCtrl,
+            label: "Nom complet du responsable *",
+            hint: "Ex: M. KABUYA Paul",
+            prefixIcon: Icons.family_restroom,
+          ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             value: _selectedLien,
             decoration: InputDecoration(
               labelText: "Lien de parenté",
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            items: _liens.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+            items: _liens
+                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                .toList(),
             onChanged: (val) => setState(() => _selectedLien = val!),
           ),
         ] else ...[
           Row(
             children: [
-              Expanded(flex: 2, child: CustomTextField(controller: _tuteurNomCtrl, label: "Nom complet du responsable *", hint: "Ex: M. KABUYA Paul", prefixIcon: Icons.family_restroom)),
+              Expanded(
+                flex: 2,
+                child: CustomTextField(
+                  controller: _tuteurNomCtrl,
+                  label: "Nom complet du responsable *",
+                  hint: "Ex: M. KABUYA Paul",
+                  prefixIcon: Icons.family_restroom,
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(
                 flex: 1,
@@ -414,49 +627,100 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                   value: _selectedLien,
                   decoration: InputDecoration(
                     labelText: "Lien de parenté",
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
-                  items: _liens.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                  items: _liens
+                      .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                      .toList(),
                   onChanged: (val) => setState(() => _selectedLien = val!),
-                )
+                ),
               ),
             ],
           ),
         ],
         const SizedBox(height: 16),
-        
+
         Row(
           children: [
             SizedBox(
               width: 110,
               child: DropdownButtonFormField<String>(
                 value: _countryCode,
-                decoration: InputDecoration(labelText: "Indicatif", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                items: ['+243', '+242', '+33', '+32', '+1'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                decoration: InputDecoration(
+                  labelText: "Indicatif",
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                items: ['+243', '+242', '+33', '+32', '+1']
+                    .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                    .toList(),
                 onChanged: (val) => setState(() => _countryCode = val!),
               ),
             ),
             const SizedBox(width: 16),
-            Expanded(child: CustomTextField(controller: _tuteurPhoneCtrl, label: "Numéro de téléphone principal *", hint: "81 234 56 78", prefixIcon: Icons.phone)),
+            Expanded(
+              child: CustomTextField(
+                controller: _tuteurPhoneCtrl,
+                label: "Numéro de téléphone principal ",
+                hint: "81 234 56 78",
+                prefixIcon: Icons.phone,
+              ),
+            ),
           ],
         ),
 
         const SizedBox(height: 32),
-        const Text("Adresse de Résidence (Éclatée)", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+        const Text(
+          "Adresse de Résidence",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.secondary,
+          ),
+        ),
         const SizedBox(height: 16),
-        
+
         if (isMobile) ...[
-          CustomTextField(controller: _avenueCtrl, label: "Avenue & Num.", hint: "Ex: Av. Kasa-Vubu N°45", prefixIcon: Icons.home),
+          CustomTextField(
+            controller: _avenueCtrl,
+            label: "Avenue & Num.",
+            hint: "Ex: Av. Kasa-Vubu N°45",
+            prefixIcon: Icons.home,
+          ),
           const SizedBox(height: 16),
-          CustomTextField(controller: _quartierCtrl, label: "Quartier", hint: "Ex: Matonge", prefixIcon: Icons.map),
+          CustomTextField(
+            controller: _quartierCtrl,
+            label: "Quartier",
+            hint: "Ex: Matonge",
+            prefixIcon: Icons.map,
+          ),
           const SizedBox(height: 16),
           communeDropdown,
         ] else ...[
           Row(
             children: [
-              Expanded(flex: 2, child: CustomTextField(controller: _avenueCtrl, label: "Avenue & Numéro", hint: "Ex: Av. Kasa-Vubu N°45", prefixIcon: Icons.home)),
+              Expanded(
+                flex: 2,
+                child: CustomTextField(
+                  controller: _avenueCtrl,
+                  label: "Avenue & Numéro",
+                  hint: "Ex: Av. Kasa-Vubu N°45",
+                  prefixIcon: Icons.home,
+                ),
+              ),
               const SizedBox(width: 16),
-              Expanded(flex: 1, child: CustomTextField(controller: _quartierCtrl, label: "Quartier", hint: "Ex: Matonge", prefixIcon: Icons.map)),
+              Expanded(
+                flex: 1,
+                child: CustomTextField(
+                  controller: _quartierCtrl,
+                  label: "Quartier",
+                  hint: "Ex: Matonge",
+                  prefixIcon: Icons.map,
+                ),
+              ),
               const SizedBox(width: 16),
               Expanded(flex: 1, child: communeDropdown),
             ],
@@ -466,11 +730,23 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
         const SizedBox(height: 32),
         const Divider(),
         const SizedBox(height: 16),
-        const Text("Informations Médicales & Urgence", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.secondary)),
+        const Text(
+          "Informations Médicales & Urgence",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.secondary,
+          ),
+        ),
         const SizedBox(height: 16),
-        
+
         if (isMobile) ...[
-          CustomTextField(controller: _urgenceNomCtrl, label: "Nom du contact d'urgence", hint: "Ex: Oncle Jean (Voisin)", prefixIcon: Icons.person_search),
+          CustomTextField(
+            controller: _urgenceNomCtrl,
+            label: "Nom du contact d'urgence",
+            hint: "Ex: Oncle Jean (Voisin)",
+            prefixIcon: Icons.person_search,
+          ),
           const SizedBox(height: 16),
           Row(
             children: [
@@ -478,36 +754,80 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                 width: 100,
                 child: DropdownButtonFormField<String>(
                   value: _countryCodeUrgence,
-                  decoration: InputDecoration(labelText: "Indicatif", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                  items: ['+243', '+242', '+33', '+32'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (val) => setState(() => _countryCodeUrgence = val!),
+                  decoration: InputDecoration(
+                    labelText: "Indicatif",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  items: ['+243', '+242', '+33', '+32']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) =>
+                      setState(() => _countryCodeUrgence = val!),
                 ),
               ),
               const SizedBox(width: 16),
-              Expanded(child: CustomTextField(controller: _urgencePhoneCtrl, label: "Tél. d'Urgence", hint: "89 123 45 67", prefixIcon: Icons.phone_callback)),
+              Expanded(
+                child: CustomTextField(
+                  controller: _urgencePhoneCtrl,
+                  label: "Tél. d'Urgence",
+                  hint: "89 123 45 67",
+                  prefixIcon: Icons.phone_callback,
+                ),
+              ),
             ],
           ),
         ] else ...[
           Row(
             children: [
-              Expanded(flex: 6, child: CustomTextField(controller: _urgenceNomCtrl, label: "Nom du contact (Urgence)", hint: "Ex: Oncle Jean (Voisin)", prefixIcon: Icons.person_search)),
+              Expanded(
+                flex: 6,
+                child: CustomTextField(
+                  controller: _urgenceNomCtrl,
+                  label: "Nom du contact d'Urgence",
+                  hint: "Ex: Oncle Jean (Voisin)",
+                  prefixIcon: Icons.person_search,
+                ),
+              ),
               const SizedBox(width: 16),
               SizedBox(
                 width: 100,
                 child: DropdownButtonFormField<String>(
                   value: _countryCodeUrgence,
-                  decoration: InputDecoration(labelText: "Indicatif", border: OutlineInputBorder(borderRadius: BorderRadius.circular(12))),
-                  items: ['+243', '+242', '+33', '+32'].map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-                  onChanged: (val) => setState(() => _countryCodeUrgence = val!),
+                  decoration: InputDecoration(
+                    labelText: "Indicatif",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  items: ['+243', '+242', '+33', '+32']
+                      .map((c) => DropdownMenuItem(value: c, child: Text(c)))
+                      .toList(),
+                  onChanged: (val) =>
+                      setState(() => _countryCodeUrgence = val!),
                 ),
               ),
               const SizedBox(width: 16),
-              Expanded(flex: 5, child: CustomTextField(controller: _urgencePhoneCtrl, label: "Téléphone d'Urgence", hint: "89 123 45 67", prefixIcon: Icons.phone_callback)),
+              Expanded(
+                flex: 5,
+                child: CustomTextField(
+                  controller: _urgencePhoneCtrl,
+                  label: "Téléphone d'Urgence",
+                  hint: "89 123 45 67",
+                  prefixIcon: Icons.phone_callback,
+                ),
+              ),
             ],
           ),
         ],
         const SizedBox(height: 16),
-        CustomTextField(controller: _urgenceMaladieCtrl, label: "Allergies ou problèmes de santé", hint: "Ex: Asthme, Allergique à l'arachide...", prefixIcon: Icons.medical_services_outlined),
+        CustomTextField(
+          controller: _urgenceMaladieCtrl,
+          label: "Allergies ou problèmes de santé",
+          hint: "Ex: Asthme, Allergique à l'arachide...",
+          prefixIcon: Icons.medical_services_outlined,
+        ),
       ],
     );
   }
@@ -520,19 +840,30 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
             flex: 1,
             child: TextButton.icon(
               onPressed: _prevStep,
-              icon: const Icon(Icons.arrow_back, color: AppColors.textSecondary),
-              label: const Text("Précédent", style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.bold)),
+              icon: const Icon(
+                Icons.arrow_back,
+                color: AppColors.textSecondary,
+              ),
+              label: const Text(
+                "Précédent",
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           )
         else
           const Expanded(flex: 1, child: SizedBox.shrink()),
-          
+
         const SizedBox(width: 16),
-          
+
         Expanded(
           flex: 2,
           child: CustomButton(
-            text: _currentStep == _totalSteps - 1 ? "Valider & Générer MAT-" : "Étape Suivante",
+            text: _currentStep == _totalSteps - 1
+                ? "Valider & Générer MAT-"
+                : "Étape Suivante",
             isLoading: _isLoading,
             onPressed: _nextStep,
           ),
