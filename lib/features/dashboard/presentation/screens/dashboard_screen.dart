@@ -9,6 +9,9 @@ import '../../../auth/data/auth_repository.dart';
 import '../../../payments/presentation/screens/payments_screen.dart';
 import '../../../admissions/presentation/screens/admission_screen.dart';
 import '../../../students/presentation/screens/students_list_screen.dart';
+import '../../../reports/presentation/screens/unpaid_screen.dart';
+import '../../../settings/presentation/screens/settings_screen.dart';
+import 'home_tab.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -18,7 +21,7 @@ class DashboardScreen extends ConsumerStatefulWidget {
 }
 
 class _DashboardScreenState extends ConsumerState<DashboardScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 2; // Default to Dashboard (Center)
 
   void _onLogout() async {
     await ref.read(authRepositoryProvider).signOut();
@@ -27,69 +30,82 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Si ce n'est pas "Desktop", on considère que c'est une Tablette ou un Mobile (pour forcer le menu en bas)
     final isDesktop = Responsive.isDesktop(context);
 
     // Titres dynamiques pour la barre supérieure (Mobile & Tablette)
-    final appBarTitles = ["Tableau de Bord", "Paiements", "Nouvelle Inscription", "Liste des Élèves"];
+    final appBarTitles = [
+      "Nouvelle Inscription", 
+      "Paiements", 
+      "Tableau de Bord", 
+      "Liste des Élèves", 
+      "Impayés",
+      "Paramètres de l'Établissement"
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.background,
       
-      // La barre supérieure uniquement sur Tablette et Mobile
       appBar: isDesktop ? null : AppBar(
         backgroundColor: Colors.white,
         elevation: 1,
         title: Text(appBarTitles[_selectedIndex], style: const TextStyle(color: AppColors.textPrimary)),
         iconTheme: const IconThemeData(color: AppColors.primary),
         actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _onLogout, tooltip: "Déconnexion", color: Colors.red),
+          IconButton(
+            icon: const Icon(Icons.settings), 
+            onPressed: () => setState(() => _selectedIndex = 5), 
+            tooltip: "Paramètres", 
+            color: AppColors.textSecondary
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout), 
+            onPressed: _onLogout, 
+            tooltip: "Déconnexion", 
+            color: Colors.red
+          ),
         ],
       ),
       
       body: Row(
         children: [
-          // Seulement affiché sur Ordinateur (Desktop)
           if (isDesktop) _buildSidebar(),
-
-          // La zone centrale dynamique selon le menu sélectionné
           Expanded(
             child: _buildCurrentView(),
           ),
         ],
       ),
       
-      // Menu inférieur fixe (Bottom Navigation Bar) pour Tablette et Téléphone
       bottomNavigationBar: !isDesktop
           ? BottomNavigationBar(
-              type: BottomNavigationBarType.fixed, // OBLIGATOIRE si tu as 4 items ou plus, sinon les labels se cachent !
-              currentIndex: _selectedIndex > 3 ? 0 : _selectedIndex,
+              type: BottomNavigationBarType.fixed,
+              currentIndex: _selectedIndex > 4 ? 2 : _selectedIndex, // Fallback to Dashboard if in Settings
               onTap: (i) => setState(() => _selectedIndex = i),
               selectedItemColor: AppColors.primary,
               unselectedItemColor: Colors.grey.shade400,
               items: const [
-                BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
-                BottomNavigationBarItem(icon: Icon(Icons.payments), label: 'Paiements'),
                 BottomNavigationBarItem(icon: Icon(Icons.person_add), label: 'Inscription'),
+                BottomNavigationBarItem(icon: Icon(Icons.payments), label: 'Paiements'),
+                BottomNavigationBarItem(icon: Icon(Icons.dashboard), label: 'Dashboard'),
                 BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Élèves'),
+                BottomNavigationBarItem(icon: Icon(Icons.money_off), label: 'Impayés'),
               ],
             )
           : null,
     );
   }
 
-  // --- Gestion de l'écran affiché au millieu ---
   Widget _buildCurrentView() {
     switch (_selectedIndex) {
-      case 0: return _buildDashboardOverview();
+      case 0: return const AdmissionScreen();
       case 1: return const PaymentsScreen();
-      case 2: return const AdmissionScreen();
+      case 2: return HomeTab(onNavigate: (i) => setState(() => _selectedIndex = i));
       case 3: return const StudentsListScreen();
-      default: return _buildDashboardOverview();
+      case 4: return const UnpaidScreen();
+      case 5: return const SettingsScreen();
+      default: return HomeTab(onNavigate: (i) => setState(() => _selectedIndex = i));
     }
   }
 
-  // --- Menu vertical latéral sur Ordinateur ---
   Widget _buildSidebar() {
     return Container(
       width: 260,
@@ -107,14 +123,16 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             ),
           ),
           const Divider(height: 1),
-          // Correspond exactement aux index de la BottomNavigationBar !
-          _SidebarItem(icon: Icons.dashboard, title: 'Tableau de bord', isSelected: _selectedIndex == 0, onTap: () => setState(() => _selectedIndex = 0)),
+          // Correspond aux index de la BottomNavigationBar
+          _SidebarItem(icon: Icons.person_add, title: 'Nouvelle Inscription', isSelected: _selectedIndex == 0, onTap: () => setState(() => _selectedIndex = 0)),
           _SidebarItem(icon: Icons.payments, title: 'Gestion Paiements', isSelected: _selectedIndex == 1, onTap: () => setState(() => _selectedIndex = 1)),
-          _SidebarItem(icon: Icons.person_add, title: 'Nouvelle Inscription', isSelected: _selectedIndex == 2, onTap: () => setState(() => _selectedIndex = 2)),
+          _SidebarItem(icon: Icons.dashboard, title: 'Tableau de bord', isSelected: _selectedIndex == 2, onTap: () => setState(() => _selectedIndex = 2)),
           _SidebarItem(icon: Icons.people, title: 'Annuaire Élèves', isSelected: _selectedIndex == 3, onTap: () => setState(() => _selectedIndex = 3)),
+          _SidebarItem(icon: Icons.money_off, title: 'Impayés & Rapports', isSelected: _selectedIndex == 4, onTap: () => setState(() => _selectedIndex = 4)),
           
           const Spacer(),
           const Divider(height: 1),
+          _SidebarItem(icon: Icons.settings, title: 'Paramètres', isSelected: _selectedIndex == 5, onTap: () => setState(() => _selectedIndex = 5)),
           _SidebarItem(icon: Icons.logout, title: 'Déconnexion', isSelected: false, onTap: _onLogout),
           const SizedBox(height: 16),
         ],
@@ -122,7 +140,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  // --- La vue "Vue d'ensemble du Dashboard" originelle ---
   Widget _buildDashboardOverview() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32.0),
@@ -157,8 +174,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 label: const Text("Nouvel Élève", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                // L'astuce : Le clic change juste l'index, ce qui charge instantanément l'écran!
-                onPressed: () => setState(() => _selectedIndex = 2), 
+                onPressed: () => setState(() => _selectedIndex = 0), 
               ),
               ActionChip(
                 avatar: const Icon(Icons.payment, color: Colors.white),
@@ -208,7 +224,7 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: Responsive.isMobile(context) ? double.infinity : 260, // Légèrement réduit pour en faire tenir 4
+      width: Responsive.isMobile(context) ? double.infinity : 260,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,

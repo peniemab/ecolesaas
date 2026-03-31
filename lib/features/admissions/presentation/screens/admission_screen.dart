@@ -5,6 +5,8 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../data/admission_repository.dart';
+import '../../../settings/presentation/screens/settings_screen.dart';
+import '../widgets/admission_receipt_generator.dart';
 
 class AdmissionScreen extends ConsumerStatefulWidget {
   const AdmissionScreen({super.key});
@@ -26,7 +28,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   String _selectedSexe = 'Masculin';
 
   // Controllers - Step 2
-  String _selectedNiveau = '1ère Primaire';
+  String? _selectedClasseId;
   final _ecoleProvCtrl = TextEditingController();
 
   // Controllers - Step 3
@@ -40,26 +42,15 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   final _quartierCtrl = TextEditingController();
   String _selectedCommune = 'Gombe';
 
+  DateTime? _selectedDateNaiss;
+
   // Nouvelle Urgence scindée
   final _urgenceNomCtrl = TextEditingController();
   String _countryCodeUrgence = '+243';
   final _urgencePhoneCtrl = TextEditingController();
   final _urgenceMaladieCtrl = TextEditingController();
 
-  static const List<String> _niveaux = [
-    '1ère Primaire',
-    '2ème Primaire',
-    '3ème Primaire',
-    '4ème Primaire',
-    '5ème Primaire',
-    '6ème Primaire',
-    '7ème Secondaire',
-    '8ème Secondaire',
-    '1ère Humanité',
-    '2ème Humanité',
-    '3ème Humanité',
-    '4ème Humanité',
-  ];
+
   static const List<String> _liens = [
     'Père',
     'Mère',
@@ -124,9 +115,13 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
       confirmText: 'Valider',
     );
     if (picked != null) {
+      final List<String> mois = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+      ];
       setState(() {
-        _dateNaissCtrl.text =
-            "${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}";
+        _selectedDateNaiss = picked;
+        _dateNaissCtrl.text = "${picked.day} ${mois[picked.month - 1]} ${picked.year}";
       });
     }
   }
@@ -146,11 +141,11 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   }
 
   Future<void> _submitForm() async {
-    if (_nomCtrl.text.isEmpty || _prenomCtrl.text.isEmpty) {
+    if (_nomCtrl.text.isEmpty || _prenomCtrl.text.isEmpty || _selectedDateNaiss == null) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Le nom et prénom de l\'élève sont requis.'),
+            content: Text('Le nom, prénom et la date de naissance sont requis.'),
           ),
         );
       return;
@@ -168,12 +163,12 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
           "${_urgenceNomCtrl.text.trim()} - $_countryCodeUrgence ${_urgencePhoneCtrl.text.trim()}";
 
       final result = await repo.registerStudent(
-        nom: _nomCtrl.text.trim(),
-        prenom: _prenomCtrl.text.trim(),
+        nom: _nomCtrl.text.trim().toUpperCase(),
+        prenom: _prenomCtrl.text.trim().toUpperCase(),
         sexe: _selectedSexe,
         lieuNaissance: _lieuNaissCtrl.text.trim(),
-        dateNaissance: _dateNaissCtrl.text.trim(),
-        niveauScolaire: _selectedNiveau,
+        dateNaissance: _selectedDateNaiss!.toIso8601String().split('T').first,
+        classeAssignee: _selectedClasseId ?? '',
         ecoleProvenance: _ecoleProvCtrl.text.trim(),
         tuteurNom: _tuteurNomCtrl.text.trim(),
         lienParente: _selectedLien,
@@ -258,13 +253,22 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
                 ),
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Le Module d\'impression PDF sera câblé dans la prochaine étape !',
-                      ),
-                    ),
+                onPressed: () async {
+                  final logoUrl = await ref.read(logoUrlProvider.future);
+                  final academicYear = ref.read(currentAcademicYearProvider);
+                  final studentData = {
+                    'matricule': matricule,
+                    'classe_assignee': classe,
+                    'nom': _nomCtrl.text.trim().toUpperCase(),
+                    'prenom': _prenomCtrl.text.trim().toUpperCase(),
+                    'sexe': _selectedSexe,
+                    'date_naissance': _dateNaissCtrl.text.trim(),
+                    'lieu_naissance': _lieuNaissCtrl.text.trim(),
+                  };
+                  await AdmissionReceiptGenerator.generateReceipt(
+                    student: studentData,
+                    academicYear: academicYear,
+                    logoUrl: logoUrl,
                   );
                 },
               ),
@@ -299,7 +303,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
           ),
           const SizedBox(height: 8),
           const Text(
-            "Assistée par l'algorithme d'auto-dispatching et équilibrage.",
+            "Veuillez remplir les informations de l'élève.",
             style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
           ),
           const SizedBox(height: 32),
@@ -501,48 +505,47 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          "2. Cursus scolaire",
+          "2. Cursus scolaire & Affectation",
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
           ),
         ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.auto_awesome, color: Colors.blue),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  "La section (A, B) sera assignée automatiquement par l'algorithme d'équilibrage.",
-                  style: TextStyle(color: Colors.blue),
-                ),
-              ),
-            ],
-          ),
-        ),
         const SizedBox(height: 24),
-        DropdownButtonFormField<String>(
-          value: _selectedNiveau,
-          decoration: InputDecoration(
-            labelText: "Niveau scolaire",
-            prefixIcon: const Icon(
-              Icons.school,
-              color: AppColors.textSecondary,
-            ),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          items: _niveaux
-              .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-              .toList(),
-          onChanged: (val) => setState(() => _selectedNiveau = val!),
+        Consumer(
+          builder: (context, ref, child) {
+            final classesAsync = ref.watch(classroomsProvider);
+            return classesAsync.when(
+              data: (classes) {
+                if (classes.isEmpty) {
+                  return const Text("Veuillez d'abord configurer des classes dans les paramètres.", style: TextStyle(color: Colors.red));
+                }
+                if (_selectedClasseId == null && classes.isNotEmpty) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() => _selectedClasseId = classes.first['name']);
+                  });
+                }
+                return DropdownButtonFormField<String>(
+                  value: _selectedClasseId,
+                  decoration: InputDecoration(
+                    labelText: "Classe d'affectation",
+                    prefixIcon: const Icon(
+                      Icons.meeting_room,
+                      color: AppColors.textSecondary,
+                    ),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  items: classes
+                      .map((c) => DropdownMenuItem<String>(value: c['name'], child: Text(c['name'])))
+                      .toList(),
+                  onChanged: (val) => setState(() => _selectedClasseId = val!),
+                );
+              },
+              loading: () => const CircularProgressIndicator(),
+              error: (err, _) => Text('Erreur: $err', style: const TextStyle(color: Colors.red)),
+            );
+          },
         ),
         const SizedBox(height: 16),
         CustomTextField(
