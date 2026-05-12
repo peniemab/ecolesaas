@@ -6,7 +6,7 @@ import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 
-import '../../../settings/presentation/screens/settings_screen.dart'; // Pour currentAcademicYearProvider, logoUrlProvider
+import '../../../settings/presentation/screens/settings_screen.dart';
 import '../../data/payment_repository.dart';
 import '../widgets/receipt_generator.dart';
 
@@ -48,7 +48,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
       if (student == null) {
         setState(() => _errorMessage = "Aucun élève trouvé avec ce matricule.");
       } else {
-        final year = ref.read(currentAcademicYearProvider);
+        final year = await ref.read(activeAcademicYearNameProvider.future);
         final status = await repo.getStudentFeeStatus(student['id'], year);
         setState(() {
           _student = student;
@@ -121,7 +121,7 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
                     final logoUrl = await ref.read(logoUrlProvider.future);
                     
                     // Refresh data behind the scenes
-                    final year = ref.read(currentAcademicYearProvider);
+                    final year = await ref.read(activeAcademicYearNameProvider.future);
                     final status = await repo.getStudentFeeStatus(_student!['id'], year);
                     setState(() {
                       _feeStatus = status;
@@ -212,6 +212,11 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
   }
 
   Widget _buildStudentInfo() {
+    final last = (_student!['last_name'] ?? _student!['nom'] ?? '?').toString();
+    final first = (_student!['first_name'] ?? _student!['prenom'] ?? '').toString();
+    final mat = _student!['matricule']?.toString() ?? '';
+    final classe = _student!['classe_assignee']?.toString();
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -224,16 +229,16 @@ class _PaymentsScreenState extends ConsumerState<PaymentsScreen> {
           CircleAvatar(
             radius: 30,
             backgroundColor: AppColors.primary,
-            child: Text(_student!['nom'].substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            child: Text(last.isNotEmpty ? last.substring(0, 1).toUpperCase() : '?', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
           ),
           const SizedBox(width: 20),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("${_student!['prenom']} ${_student!['nom']}", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                Text("$first $last", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
                 const SizedBox(height: 4),
-                Text("Matricule: ${_student!['matricule']}  |  Classe: ${_student!['classe_assignee']}", style: const TextStyle(color: AppColors.textSecondary)),
+                Text("Matricule: $mat  |  Classe: ${classe ?? '—'}", style: const TextStyle(color: AppColors.textSecondary)),
               ],
             ),
           ),

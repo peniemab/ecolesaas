@@ -5,6 +5,7 @@ import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../invites/data/pending_school_invite_storage.dart';
 import '../../data/auth_repository.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -18,6 +19,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowAuthLinkMessage());
+  }
+
+  void _maybeShowAuthLinkMessage() {
+    if (!mounted) return;
+    final router = GoRouter.of(context);
+    final err = router.state.uri.queryParameters['auth_error'];
+    if (err != 'link_expired') return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Le lien de confirmation a expiré ou a déjà été utilisé. Dans Supabase : '
+          'Authentication → Users → renvoyer l’e-mail de confirmation, ou confirmez le compte manuellement. '
+          'Ensuite connectez-vous avec l’e-mail et le mot de passe choisis sur l’invitation.',
+        ),
+        duration: Duration(seconds: 14),
+      ),
+    );
+    router.replace('/login');
+  }
 
   @override
   void dispose() {
@@ -39,14 +64,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text.trim(),
       );
-      
+
+      try {
+        await PendingSchoolInviteStorage.tryCompleteAfterSignIn(
+          ref.read(supabaseClientProvider),
+        );
+      } catch (e) {
+        if (mounted) {
+          await PendingSchoolInviteStorage.clear();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Impossible de finaliser l’invitation : $e. Demandez un nouveau lien à la plateforme.')),
+          );
+        }
+        await authRepo.signOut();
+        return;
+      }
+
       // Vérifier l'état de l'utilisateur (Onboarding incomplet, ou client actif)
       if (mounted) {
          final status = await authRepo.checkUserStatus();
          
          if (status == 'needs_onboarding') {
-            // C'est sa toute première connexion et il n'a pas encore configuré son école !
-            context.go('/onboarding');
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Aucune école liée à ce compte. Utilisez le lien d’invitation reçu de la plateforme pour créer l’établissement, '
+                  'ou le lien d’invitation de votre directeur pour rejoindre une équipe.',
+                ),
+                duration: Duration(seconds: 8),
+              ),
+            );
+            await authRepo.signOut();
+         } else if (status == 'platform_admin') {
+            context.go('/platform-admin');
          } else if (status == 'active') {
              context.go('/dashboard');
          } else if (status == 'pending') {

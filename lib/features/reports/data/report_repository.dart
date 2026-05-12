@@ -1,75 +1,126 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../core/supabase/tenant_context.dart';
+import '../../settings/data/settings_repository.dart';
+
 final reportRepositoryProvider = Provider<ReportRepository>((ref) {
-  return ReportRepository(Supabase.instance.client);
+  return ReportRepository(
+    Supabase.instance.client,
+    ref.watch(settingsRepositoryProvider),
+  );
 });
 
 class ReportRepository {
   final SupabaseClient _supabase;
-  ReportRepository(this._supabase);
+  final SettingsRepository _settings;
 
-  Future<String> _getSchoolId() async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) throw Exception("Non authentifié");
-    final profile = await _supabase.from('profiles').select('school_id').eq('id', userId).single();
-    return profile['school_id'];
+  ReportRepository(this._supabase, this._settings);
+
+  Future<String> _getSchoolId() => _supabase.requireSchoolId();
+
+  String _genderLabel(dynamic gender) {
+    if (gender == 'male') return 'Masculin';
+    if (gender == 'female') return 'Féminin';
+    return 'Autre';
   }
 
-  /// Calculates the financial report for a given academic year.
+  Map<String, dynamic> _flattenStudent(
+    Map<String, dynamic> row,
+    String activeYearId,
+  ) {
+    var className = '';
+    final sc = row['student_classes'];
+    if (sc is List) {
+      for (final link in sc) {
+        if (link is! Map) continue;
+        if (link['academic_year_id'] == activeYearId) {
+          final classes = link['classes'];
+          if (classes is Map && classes['name'] != null) {
+            className = classes['name'] as String;
+          }
+          break;
+        }
+      }
+    }
+
+    return {
+      ...row,
+      'nom': row['last_name'],
+      'prenom': row['first_name'],
+      'sexe': _genderLabel(row['gender']),
+      'date_naissance': row['birth_date'],
+      'lieu_naissance': row['lieu_naissance'],
+      'classe_assignee': className,
+    };
+  }
+
+  Future<String> _academicYearIdForName(String academicYearName) async {
+    final schoolId = await _getSchoolId();
+    final row = await _supabase
+        .from('academic_years')
+        .select('id')
+        .eq('school_id', schoolId)
+        .eq('name', academicYearName)
+        .maybeSingle();
+    return row?['id'] as String? ?? await _settings.getActiveAcademicYearId();
+  }
+
   Future<Map<String, dynamic>> getFinancialReport(String academicYear) async {
     final schoolId = await _getSchoolId();
+    final yearIdForClasses = await _academicYearIdForName(academicYear);
 
-    // 1. Get all fees for this year
     final fees = await _supabase
         .from('fees')
         .select()
         .eq('school_id', schoolId)
         .eq('academic_year', academicYear);
 
-    // 2. Get all students
-    final students = await _supabase
+    final studentsRaw = await _supabase
         .from('students')
-        .select()
-        .eq('school_id', schoolId)
-        .order('nom');
+        .select(
+          'id, matricule, first_name, last_name, gender, birth_date, lieu_naissance, ecole_provenance, '
+          'student_classes(class_id, academic_year_id, classes(name))',
+        )
+        .eq('school_id', schoolId);
 
-    // 3. Get all payments
-    final payments = await _supabase
-        .from('payments_history')
-        .select();
+    final students = (studentsRaw as List)
+        .cast<Map<String, dynamic>>()
+        .map((s) => _flattenStudent(s, yearIdForClasses))
+        .toList()
+      ..sort((a, b) => '${a['nom']}'.compareTo('${b['nom']}'));
 
-    // Filter payments for only the fees defined this year
+    final payments = await _supabase.from('payments_history').select();
+
     final feeIds = fees.map((f) => f['id']).toSet();
-    final currentYearPayments = payments.where((p) => feeIds.contains(p['fee_id'])).toList();
+    final currentYearPayments =
+        payments.where((p) => feeIds.contains(p['fee_id'])).toList();
 
-    // Calculate Global Stats
     double totalExpectedGlobally = 0;
-    for (var fee in fees) {
-      double amount = double.parse(fee['amount'].toString());
-      totalExpectedGlobally += (amount * students.length);
+    for (final fee in fees) {
+      final amount = double.parse(fee['amount'].toString());
+      totalExpectedGlobally += amount * students.length;
     }
 
     double totalReceivedGlobally = 0;
-    for (var p in currentYearPayments) {
+    for (final p in currentYearPayments) {
       totalReceivedGlobally += double.parse(p['amount_paid'].toString());
     }
 
-    // Assign stats per student
-    List<Map<String, dynamic>> studentReports = [];
+    final studentReports = <Map<String, dynamic>>[];
 
-    for (var student in students) {
+    for (final student in students) {
       final sId = student['id'];
-      final studentPayments = currentYearPayments.where((p) => p['student_id'] == sId).toList();
-      
+      final studentPayments =
+          currentYearPayments.where((p) => p['student_id'] == sId).toList();
+
       double studentExpected = 0;
-      double studentPaid = 0;
-      
-      for (var f in fees) {
+      for (final f in fees) {
         studentExpected += double.parse(f['amount'].toString());
       }
 
-      for (var p in studentPayments) {
+      double studentPaid = 0;
+      for (final p in studentPayments) {
         studentPaid += double.parse(p['amount_paid'].toString());
       }
 

@@ -1,10 +1,10 @@
-import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../../../core/supabase/tenant_context.dart';
 
 class ReceiptGenerator {
   static Future<void> generateReceipt({
@@ -31,17 +31,13 @@ class ReceiptGenerator {
     String schoolName = "ÉTABLISSEMENT SCOLAIRE";
     try {
       final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      if (userId != null) {
-        final profile = await supabase.from('profiles').select().eq('id', userId).single();
-        if (profile.containsKey('school_name')) {
-          schoolName = profile['school_name']?.toString().toUpperCase() ?? schoolName;
-        }
+      final name = await supabase.schoolNameForCurrentUser();
+      if (name != null && name.isNotEmpty) {
+        schoolName = name.toUpperCase();
       }
     } catch (_) {}
 
     final double expected = feeStatus['expected_amount'];
-    final double previouslyPaid = feeStatus['total_paid'] - amountPaid; // totalPaid in feeStatus likely already includes this if fetched after, so we need to be careful. If passed after payment, we assumed total_paid includes amountPaid.
     final double totalPaidNow = feeStatus['total_paid'];
     final bool isSolde = totalPaidNow >= expected;
     final String statusText = isSolde ? "SOLDE ($totalPaidNow / $expected FC)" : "Partiel ($totalPaidNow / $expected FC)";
@@ -69,9 +65,12 @@ class ReceiptGenerator {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
-                    pw.Text("Élève : ${student['nom']} ${student['prenom']}", style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold)),
-                    pw.Text("Matricule : ${student['matricule']}", style: const pw.TextStyle(fontSize: 12)),
-                    pw.Text("Classe : ${student['classe_assignee']}", style: const pw.TextStyle(fontSize: 12)),
+                    pw.Text(
+                      "Élève : ${student['prenom'] ?? student['first_name'] ?? ''} ${student['nom'] ?? student['last_name'] ?? ''}",
+                      style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+                    ),
+                    pw.Text("Matricule : ${student['matricule'] ?? ''}", style: const pw.TextStyle(fontSize: 12)),
+                    pw.Text("Classe : ${student['classe_assignee'] ?? ''}", style: const pw.TextStyle(fontSize: 12)),
                   ],
                 ),
               ),

@@ -18,22 +18,22 @@ class AuthRepository {
     await _supabase.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<void> completeOnboarding({
+  Future<AuthResponse> signUpWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    return _supabase.auth.signUp(email: email, password: password);
+  }
+
+  /// Inscription Auth seule (sans création d'école — utiliser les liens d'invitation).
+  Future<void> signUp({
     required String schoolName,
     required String schoolAddress,
     required String adminName,
+    required String email,
+    required String password,
   }) async {
-    final userId = _supabase.auth.currentUser?.id;
-    if (userId == null) throw Exception("Vous n'êtes pas connecté.");
-
-    await _supabase.rpc(
-      'complete_onboarding',
-      params: {
-        'p_school_name': schoolName,
-        'p_school_address': schoolAddress,
-        'p_admin_name': adminName,
-      },
-    );
+    await _supabase.auth.signUp(email: email, password: password);
   }
 
   Future<void> signOut() async {
@@ -45,24 +45,27 @@ class AuthRepository {
     if (userId == null) return 'unauthenticated';
 
     try {
-      final profileResponse = await _supabase
-          .from('profiles')
-          .select('school_id')
-          .eq('id', userId)
+      final staffRow = await _supabase
+          .from('staff')
+          .select('id')
+          .eq('user_id', userId)
           .maybeSingle();
 
-      if (profileResponse == null) {
-        return 'needs_onboarding';
+      if (staffRow != null) {
+        return 'active';
       }
 
-      final schoolId = profileResponse['school_id'];
-      final schoolResponse = await _supabase
-          .from('schools')
-          .select('status')
-          .eq('id', schoolId)
-          .single();
+      final plat = await _supabase
+          .from('platform_admins')
+          .select('user_id')
+          .eq('user_id', userId)
+          .maybeSingle();
 
-      return schoolResponse['status'] as String;
+      if (plat != null) {
+        return 'platform_admin';
+      }
+
+      return 'needs_onboarding';
     } catch (e) {
       return 'error';
     }

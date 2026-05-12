@@ -50,7 +50,6 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   final _urgencePhoneCtrl = TextEditingController();
   final _urgenceMaladieCtrl = TextEditingController();
 
-
   static const List<String> _liens = [
     'Père',
     'Mère',
@@ -116,12 +115,23 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
     );
     if (picked != null) {
       final List<String> mois = [
-        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
-        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+        'Janvier',
+        'Février',
+        'Mars',
+        'Avril',
+        'Mai',
+        'Juin',
+        'Juillet',
+        'Août',
+        'Septembre',
+        'Octobre',
+        'Novembre',
+        'Décembre',
       ];
       setState(() {
         _selectedDateNaiss = picked;
-        _dateNaissCtrl.text = "${picked.day} ${mois[picked.month - 1]} ${picked.year}";
+        _dateNaissCtrl.text =
+            "${picked.day} ${mois[picked.month - 1]} ${picked.year}";
       });
     }
   }
@@ -141,11 +151,15 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   }
 
   Future<void> _submitForm() async {
-    if (_nomCtrl.text.isEmpty || _prenomCtrl.text.isEmpty || _selectedDateNaiss == null) {
+    if (_nomCtrl.text.isEmpty ||
+        _prenomCtrl.text.isEmpty ||
+        _selectedDateNaiss == null) {
       if (mounted)
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Le nom, prénom et la date de naissance sont requis.'),
+            content: Text(
+              'Le nom, prénom et la date de naissance sont requis.',
+            ),
           ),
         );
       return;
@@ -255,7 +269,9 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                 ),
                 onPressed: () async {
                   final logoUrl = await ref.read(logoUrlProvider.future);
-                  final academicYear = ref.read(currentAcademicYearProvider);
+                  final academicYear = await ref.read(
+                    activeAcademicYearNameProvider.future,
+                  );
                   final studentData = {
                     'matricule': matricule,
                     'classe_assignee': classe,
@@ -373,7 +389,6 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   Widget _buildStep1Identite() {
     final isMobile = Responsive.isMobile(context);
 
-    // Sélecteur de Date intelligent
     final dateWidget = GestureDetector(
       onTap: () => _selectDate(context),
       child: AbsorbPointer(
@@ -519,7 +534,10 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
             return classesAsync.when(
               data: (classes) {
                 if (classes.isEmpty) {
-                  return const Text("Veuillez d'abord configurer des classes dans les paramètres.", style: TextStyle(color: Colors.red));
+                  return const Text(
+                    "Veuillez d'abord configurer des classes dans les paramètres.",
+                    style: TextStyle(color: Colors.red),
+                  );
                 }
                 if (_selectedClasseId == null && classes.isNotEmpty) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -534,16 +552,26 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                       Icons.meeting_room,
                       color: AppColors.textSecondary,
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   items: classes
-                      .map((c) => DropdownMenuItem<String>(value: c['name'], child: Text(c['name'])))
+                      .map(
+                        (c) => DropdownMenuItem<String>(
+                          value: c['name'],
+                          child: Text(c['name']),
+                        ),
+                      )
                       .toList(),
                   onChanged: (val) => setState(() => _selectedClasseId = val!),
                 );
               },
               loading: () => const CircularProgressIndicator(),
-              error: (err, _) => Text('Erreur: $err', style: const TextStyle(color: Colors.red)),
+              error: (err, _) => Text(
+                'Erreur: $err',
+                style: const TextStyle(color: Colors.red),
+              ),
             );
           },
         ),
@@ -561,10 +589,8 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
   Widget _buildStep3Tuteur() {
     final isMobile = Responsive.isMobile(context);
 
-    // Déclaration des champs de communes mutualisés
     final communeDropdown = DropdownButtonFormField<String>(
-      menuMaxHeight:
-          400, // Important pour voir les 24 communes sans casser l'interface
+      menuMaxHeight: 400,
       value: _selectedCommune,
       decoration: InputDecoration(
         labelText: "Commune (Ville de Kinshasa)",

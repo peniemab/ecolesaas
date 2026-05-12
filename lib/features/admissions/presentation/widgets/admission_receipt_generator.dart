@@ -5,6 +5,8 @@ import 'package:http/http.dart' as http;
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../../../core/supabase/tenant_context.dart';
+
 class AdmissionReceiptGenerator {
   static Future<void> generateReceipt({
     required Map<String, dynamic> student,
@@ -28,12 +30,9 @@ class AdmissionReceiptGenerator {
     String schoolName = "ÉTABLISSEMENT SCOLAIRE";
     try {
       final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      if (userId != null) {
-        final profile = await supabase.from('profiles').select().eq('id', userId).single();
-        if (profile.containsKey('school_name')) {
-          schoolName = profile['school_name']?.toString().toUpperCase() ?? schoolName;
-        }
+      final name = await supabase.schoolNameForCurrentUser();
+      if (name != null && name.isNotEmpty) {
+        schoolName = name.toUpperCase();
       }
     } catch (_) {}
 

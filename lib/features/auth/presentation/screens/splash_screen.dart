@@ -13,11 +13,24 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate loading for 2.5 seconds, then go to the login screen
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        context.go('/login');
+    WidgetsBinding.instance.addPostFrameCallback((_) => _bootstrap());
+  }
+
+  void _bootstrap() {
+    if (!mounted) return;
+    // Si l’utilisateur a ouvert /invite-* mais le routeur est encore sur le splash (hot reload, etc.)
+    try {
+      final uri = Uri.base;
+      final path = uri.path;
+      if (path == '/invite-school' || path == '/invite-staff') {
+        final loc = uri.hasQuery ? '$path?${uri.query}' : path;
+        context.go(loc);
+        return;
       }
+    } catch (_) {}
+
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (mounted) context.go('/login');
     });
   }
 

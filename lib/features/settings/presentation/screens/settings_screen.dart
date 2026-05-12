@@ -1,28 +1,27 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 
+import '../../../../core/invite_links.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
+import '../../../invites/data/invitations_repository.dart';
 import '../../data/settings_repository.dart';
 
 final classroomsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   return ref.watch(settingsRepositoryProvider).getClassrooms();
 });
 
-class CurrentAcademicYear extends Notifier<String> {
-  @override
-  String build() => "2025-2026";
-  void setYear(String year) => state = year;
-}
-
-final currentAcademicYearProvider = NotifierProvider<CurrentAcademicYear, String>(CurrentAcademicYear.new);
+final activeAcademicYearNameProvider = FutureProvider<String>((ref) {
+  return ref.watch(settingsRepositoryProvider).getActiveAcademicYearName();
+});
 
 final feesProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final year = ref.watch(currentAcademicYearProvider);
+  final year = await ref.watch(activeAcademicYearNameProvider.future);
   return ref.watch(settingsRepositoryProvider).getFees(year);
 });
 
@@ -118,7 +117,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               final amount = double.tryParse(amountCtrl.text.trim());
               if (amount == null) return;
 
-              final year = ref.read(currentAcademicYearProvider);
+              final year = await ref.read(activeAcademicYearNameProvider.future);
               await ref.read(settingsRepositoryProvider).addFee(
                     name: nameCtrl.text.trim(),
                     amount: amount,
@@ -133,6 +132,74 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  void _showStaffInviteDialog() {
+    String role = 'teacher';
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) {
+          return AlertDialog(
+            title: const Text('Inviter un membre du personnel'),
+            content: DropdownButtonFormField<String>(
+              value: role,
+              decoration: const InputDecoration(labelText: 'Rôle'),
+              items: const [
+                DropdownMenuItem(value: 'teacher', child: Text('Enseignant')),
+                DropdownMenuItem(value: 'admin', child: Text('Administratif')),
+                DropdownMenuItem(value: 'other', child: Text('Autre')),
+              ],
+              onChanged: (v) {
+                if (v != null) setSt(() => role = v);
+              },
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+              FilledButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _createStaffInviteLink(role);
+                },
+                child: const Text('Générer le lien'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _createStaffInviteLink(String role) async {
+    try {
+      final token = await ref.read(invitationsRepositoryProvider).createStaffInvitation(role);
+      final url = buildInviteStaffUrl(token);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Lien à envoyer au collaborateur'),
+          content: SelectableText(url, style: const TextStyle(fontSize: 13)),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                await Clipboard.setData(ClipboardData(text: url));
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lien copié')));
+                }
+              },
+              child: const Text('Copier'),
+            ),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer')),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      }
+    }
   }
 
   @override
@@ -190,6 +257,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 48),
+
+          Consumer(
+            builder: (context, ref, _) {
+              final admin = ref.watch(isSchoolAdminProvider);
+              return admin.when(
+                data: (ok) {
+                  if (!ok) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildSectionTitle(Icons.link, 'Invitations personnel', 'Générez un lien pour qu’un collaborateur rejoigne votre établissement'),
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: _showStaffInviteDialog,
+                        icon: const Icon(Icons.person_add_alt_1),
+                        label: const Text('Nouveau lien d’invitation'),
+                      ),
+                      const SizedBox(height: 48),
+                    ],
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              );
+            },
+          ),
 
           // --- CLASSROOMS SECTION ---
           Row(
@@ -251,16 +344,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             children: [
               const Text("Année Scolaire : ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(width: 16),
-              Consumer(builder: (context, ref, _) {
-                final year = ref.watch(currentAcademicYearProvider);
-                return DropdownButton<String>(
-                  value: year,
-                  items: ["2024-2025", "2025-2026", "2026-2027"].map((y) => DropdownMenuItem(value: y, child: Text(y))).toList(),
-                  onChanged: (val) {
-                    if (val != null) ref.read(currentAcademicYearProvider.notifier).setYear(val);
-                  },
-                );
-              })
+              Consumer(
+                builder: (context, ref, _) {
+                  final y = ref.watch(activeAcademicYearNameProvider);
+                  return y.when(
+                    data: (name) => Text(name, style: const TextStyle(fontSize: 16)),
+                    loading: () => const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
+                    error: (e, _) => Text('Erreur: $e', style: const TextStyle(color: Colors.red)),
+                  );
+                },
+              ),
             ],
           ),
           const SizedBox(height: 16),

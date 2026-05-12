@@ -9,11 +9,11 @@ import '../../../../core/utils/responsive.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 
-import '../../../settings/presentation/screens/settings_screen.dart'; // Pour classroomsProvider, currentAcademicYearProvider, logoUrlProvider
+import '../../../settings/presentation/screens/settings_screen.dart';
 import '../../data/report_repository.dart';
 
 final financialReportProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final year = ref.watch(currentAcademicYearProvider);
+  final year = await ref.watch(activeAcademicYearNameProvider.future);
   return ref.watch(reportRepositoryProvider).getFinancialReport(year);
 });
 
@@ -37,7 +37,8 @@ class _UnpaidScreenState extends ConsumerState<UnpaidScreen> {
 
   Future<void> _printList(List<Map<String, dynamic>> students, Map<String, dynamic> globalStats) async {
     final pdf = pw.Document();
-    
+    final academicYear = await ref.read(activeAcademicYearNameProvider.future);
+
     // Simplification : Juste le PDF sans fetch le vrai logo pour aller plus vite,
     // mais pour faire propre, on peut récupérer le logo avec ref.read(logoUrlProvider.future)
     String title = "Rapport Financier - $_selectedClassOption";
@@ -48,7 +49,7 @@ class _UnpaidScreenState extends ConsumerState<UnpaidScreen> {
         build: (context) => [
           pw.Header(level: 0, child: pw.Text("Liste des Impayés", style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold))),
           pw.SizedBox(height: 10),
-          pw.Text("Année Scolaire : ${ref.read(currentAcademicYearProvider)}"),
+          pw.Text("Année Scolaire : $academicYear"),
           pw.Text("Classe : $_selectedClassOption"),
           pw.SizedBox(height: 20),
           

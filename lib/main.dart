@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,11 +9,23 @@ import 'core/theme/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Supabase Connection
+
+  await dotenv.load(fileName: '.env');
+  final supabaseUrl = dotenv.env['SUPABASE_URL']?.trim();
+  final supabaseAnonKey = dotenv.env['SUPABASE_ANON_KEY']?.trim();
+  if (supabaseUrl == null ||
+      supabaseAnonKey == null ||
+      supabaseUrl.isEmpty ||
+      supabaseAnonKey.isEmpty) {
+    throw StateError(
+      'Fichier .env manquant ou incomplet. Copie .env.example vers .env '
+      'et renseigne SUPABASE_URL et SUPABASE_ANON_KEY (dashboard Supabase → API).',
+    );
+  }
+
   await Supabase.initialize(
-    url: 'https://cfppjlesrvinoqtbvqev.supabase.co',
-    anonKey: 'sb_publishable_9PSHsECmb7hY7EGnbCzBNg_E5j5Ft7v',
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
   );
   
   runApp(

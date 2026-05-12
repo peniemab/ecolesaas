@@ -31,6 +31,7 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
   }
 
   Future<void> _printAttendanceList(List<Map<String, dynamic>> students) async {
+    final academicYear = await ref.read(activeAcademicYearNameProvider.future);
     // Sort students alphabetically by name
     final sortedStudents = List<Map<String, dynamic>>.from(students)
       ..sort((a, b) => (a['nom'].toString() + a['prenom'].toString())
@@ -55,7 +56,7 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
                pw.Column(
                  crossAxisAlignment: pw.CrossAxisAlignment.start,
                  children: [
-                    pw.Text("Année Scolaire : ${ref.read(currentAcademicYearProvider)}"),
+                    pw.Text("Année Scolaire : $academicYear"),
                     pw.Text("Effectif : ${sortedStudents.length} élèves"),
                  ]
                ),
@@ -191,7 +192,11 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
 
     try {
       final supabase = Supabase.instance.client;
-      final guardianList = await supabase.from('guardians').select().eq('student_id', student['id']);
+      final guardianList = await supabase
+          .from('student_emergency_contacts')
+          .select()
+          .eq('student_id', student['id'])
+          .order('created_at');
       final guardian = guardianList.isNotEmpty ? guardianList.first : null;
       
       if (mounted) {
@@ -210,7 +215,7 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
     showDialog(
        context: context,
        builder: (ctx) => AlertDialog(
-          title: Text("Profil Élève : ${student['matricule']}", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+          title: Text("Profil Élève : ${student['matricule'] ?? '—'}", style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
           content: SingleChildScrollView(
             child: SizedBox(
               width: 500,
@@ -231,16 +236,11 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
                    const Text("2. Responsable / Tuteur Légal", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                    const Divider(),
                    if (guardian != null) ...[
-                     _InfoRow("Noms du Tuteur", guardian['nom_complet'] ?? 'N/A'),
-                     _InfoRow("Lien de Parenté", guardian['lien_parente'] ?? 'N/A'),
-                     _InfoRow("Téléphone", guardian['telephone'] ?? 'N/A'),
-                     _InfoRow("Adresse Exacte", guardian['adresse'] ?? 'N/A'),
-                     const SizedBox(height: 24),
-                     
-                     const Text("3. Urgences & Médical", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.orange)),
-                     const Divider(),
-                     _InfoRow("Contact d'urgence", guardian['urgence_contact'] ?? 'N/A'),
-                     _InfoRow("Précautions Médicales", guardian['urgence_maladie'] == null || guardian['urgence_maladie'].toString().isEmpty ? 'Aucune' : guardian['urgence_maladie'].toString()),
+                     _InfoRow("Noms du Tuteur", guardian['full_name']?.toString() ?? 'N/A'),
+                     _InfoRow("Lien de Parenté", guardian['relationship']?.toString() ?? 'N/A'),
+                     _InfoRow("Téléphone", guardian['phone']?.toString() ?? 'N/A'),
+                     if (guardian['note'] != null && guardian['note'].toString().isNotEmpty)
+                       _InfoRow("Informations", guardian['note'].toString()),
                    ] else ...[
                      const Text("Aucune information de tuteur trouvée pour cet élève.", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey)),
                    ]
@@ -286,9 +286,9 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
               if (_searchQuery.isNotEmpty) {
                 final sq = _searchQuery.toLowerCase();
                 students = students.where((s) {
-                  return s['nom'].toLowerCase().contains(sq) || 
-                         s['prenom'].toLowerCase().contains(sq) || 
-                         s['matricule'].toLowerCase().contains(sq);
+                  return s['nom'].toLowerCase().contains(sq) ||
+                         s['prenom'].toLowerCase().contains(sq) ||
+                         (s['matricule']?.toString().toLowerCase().contains(sq) ?? false);
                 }).toList();
               }
 
@@ -367,7 +367,7 @@ class _StudentsListScreenState extends ConsumerState<StudentsListScreen> {
                         rows: students.map((s) {
                           return DataRow(
                             cells: [
-                              DataCell(Text(s['matricule'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary))),
+                              DataCell(Text(s['matricule']?.toString() ?? '—', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary))),
                               DataCell(Text("${s['prenom']} ${s['nom']}", style: const TextStyle(fontWeight: FontWeight.w500))),
                               DataCell(Text(s['sexe'] ?? '')),
                               DataCell(Text(s['classe_assignee'] ?? '')),
