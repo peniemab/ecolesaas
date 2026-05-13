@@ -154,7 +154,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
     if (_nomCtrl.text.isEmpty ||
         _prenomCtrl.text.isEmpty ||
         _selectedDateNaiss == null) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -162,6 +162,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
             ),
           ),
         );
+      }
       return;
     }
 
@@ -293,10 +294,11 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
         );
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -430,7 +432,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _selectedSexe,
+            initialValue: _selectedSexe,
             decoration: InputDecoration(
               labelText: "Sexe / Genre",
               prefixIcon: const Icon(Icons.wc, color: AppColors.textSecondary),
@@ -480,7 +482,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
             children: [
               Expanded(
                 child: DropdownButtonFormField<String>(
-                  value: _selectedSexe,
+                  initialValue: _selectedSexe,
                   decoration: InputDecoration(
                     labelText: "Sexe / Genre",
                     prefixIcon: const Icon(
@@ -545,7 +547,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
                   });
                 }
                 return DropdownButtonFormField<String>(
-                  value: _selectedClasseId,
+                  initialValue: _selectedClasseId,
                   decoration: InputDecoration(
                     labelText: "Classe d'affectation",
                     prefixIcon: const Icon(
@@ -591,7 +593,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
 
     final communeDropdown = DropdownButtonFormField<String>(
       menuMaxHeight: 400,
-      value: _selectedCommune,
+      initialValue: _selectedCommune,
       decoration: InputDecoration(
         labelText: "Commune (Ville de Kinshasa)",
         prefixIcon: const Icon(
@@ -628,7 +630,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
           ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
-            value: _selectedLien,
+            initialValue: _selectedLien,
             decoration: InputDecoration(
               labelText: "Lien de parenté",
               border: OutlineInputBorder(
@@ -656,7 +658,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
               Expanded(
                 flex: 1,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedLien,
+                  initialValue: _selectedLien,
                   decoration: InputDecoration(
                     labelText: "Lien de parenté",
                     border: OutlineInputBorder(
@@ -679,7 +681,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
             SizedBox(
               width: 110,
               child: DropdownButtonFormField<String>(
-                value: _countryCode,
+                initialValue: _countryCode,
                 decoration: InputDecoration(
                   labelText: "Indicatif",
                   border: OutlineInputBorder(
@@ -785,7 +787,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
               SizedBox(
                 width: 100,
                 child: DropdownButtonFormField<String>(
-                  value: _countryCodeUrgence,
+                  initialValue: _countryCodeUrgence,
                   decoration: InputDecoration(
                     labelText: "Indicatif",
                     border: OutlineInputBorder(
@@ -826,7 +828,7 @@ class _AdmissionScreenState extends ConsumerState<AdmissionScreen> {
               SizedBox(
                 width: 100,
                 child: DropdownButtonFormField<String>(
-                  value: _countryCodeUrgence,
+                  initialValue: _countryCodeUrgence,
                   decoration: InputDecoration(
                     labelText: "Indicatif",
                     border: OutlineInputBorder(

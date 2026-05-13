@@ -12,7 +12,9 @@ import '../../../../core/widgets/custom_text_field.dart';
 import '../../../invites/data/invitations_repository.dart';
 import '../../data/settings_repository.dart';
 
-final classroomsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+final classroomsProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) async {
   return ref.watch(settingsRepositoryProvider).getClassrooms();
 });
 
@@ -48,17 +50,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     if (result != null && result.files.single.bytes != null) {
       setState(() => _isLoadingLogo = true);
       try {
-        await ref.read(settingsRepositoryProvider).uploadLogo(
-              result.files.single.bytes!,
-              result.files.single.name,
-            );
+        await ref
+            .read(settingsRepositoryProvider)
+            .uploadLogo(result.files.single.bytes!, result.files.single.name);
         ref.invalidate(logoUrlProvider);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logo mis à jour avec succès')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Logo mis à jour avec succès')),
+          );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erreur: $e'), backgroundColor: Colors.red),
+          );
         }
       } finally {
         setState(() => _isLoadingLogo = false);
@@ -78,11 +83,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           hint: 'Ex: 1ère A',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (ctrl.text.trim().isEmpty) return;
-              await ref.read(settingsRepositoryProvider).addClassroom(ctrl.text.trim());
+              await ref
+                  .read(settingsRepositoryProvider)
+                  .addClassroom(ctrl.text.trim());
               ref.invalidate(classroomsProvider);
               if (mounted) Navigator.pop(ctx);
             },
@@ -104,21 +114,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            CustomTextField(controller: nameCtrl, label: 'Nom du frais (ex: Inscription)', hint: 'Ex: Inscription'),
+            CustomTextField(
+              controller: nameCtrl,
+              label: 'Nom du frais (ex: Inscription)',
+              hint: 'Ex: Inscription',
+            ),
             const SizedBox(height: 16),
-            CustomTextField(controller: amountCtrl, label: 'Montant', hint: 'Ex: 5000', keyboardType: TextInputType.number),
+            CustomTextField(
+              controller: amountCtrl,
+              label: 'Montant',
+              hint: 'Ex: 5000',
+              keyboardType: TextInputType.number,
+            ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
           ElevatedButton(
             onPressed: () async {
-              if (nameCtrl.text.trim().isEmpty || amountCtrl.text.trim().isEmpty) return;
+              if (nameCtrl.text.trim().isEmpty ||
+                  amountCtrl.text.trim().isEmpty)
+                return;
               final amount = double.tryParse(amountCtrl.text.trim());
               if (amount == null) return;
 
-              final year = await ref.read(activeAcademicYearNameProvider.future);
-              await ref.read(settingsRepositoryProvider).addFee(
+              final year = await ref.read(
+                activeAcademicYearNameProvider.future,
+              );
+              await ref
+                  .read(settingsRepositoryProvider)
+                  .addFee(
                     name: nameCtrl.text.trim(),
                     amount: amount,
                     academicYear: year,
@@ -143,7 +171,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           return AlertDialog(
             title: const Text('Inviter un membre du personnel'),
             content: DropdownButtonFormField<String>(
-              value: role,
+              initialValue: role,
               decoration: const InputDecoration(labelText: 'Rôle'),
               items: const [
                 DropdownMenuItem(value: 'teacher', child: Text('Enseignant')),
@@ -155,7 +183,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               },
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Annuler'),
+              ),
               FilledButton(
                 onPressed: () {
                   Navigator.pop(ctx);
@@ -172,7 +203,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _createStaffInviteLink(String role) async {
     try {
-      final token = await ref.read(invitationsRepositoryProvider).createStaffInvitation(role);
+      final token = await ref
+          .read(invitationsRepositoryProvider)
+          .createStaffInvitation(role);
       final url = buildInviteStaffUrl(token);
       if (!mounted) return;
       await showDialog<void>(
@@ -186,18 +219,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 await Clipboard.setData(ClipboardData(text: url));
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lien copié')));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Lien copié')));
                 }
               },
               child: const Text('Copier'),
             ),
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Fermer'),
+            ),
           ],
         ),
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
       }
     }
   }
@@ -209,15 +249,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Paramètres de l'Établissement", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          const Text(
+            "Paramètres de l'Établissement",
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
           const SizedBox(height: 32),
 
           // --- LOGO SECTION ---
-          _buildSectionTitle(Icons.image, "Logo de l'École", "Utilisé pour l'impression des reçus et listes"),
+          _buildSectionTitle(
+            Icons.image,
+            "Logo de l'École",
+            "Utilisé pour l'impression des reçus et listes",
+          ),
           const SizedBox(height: 16),
           Card(
             elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: Colors.grey.shade200)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Row(
@@ -229,16 +283,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         data: (url) => url != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: Image.network(url, width: 100, height: 100, fit: BoxFit.cover),
+                                child: Image.network(
+                                  url,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
                               )
                             : Container(
                                 width: 100,
                                 height: 100,
-                                decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(12)),
-                                child: const Icon(Icons.school, size: 40, color: Colors.grey),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.shade100,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                  Icons.school,
+                                  size: 40,
+                                  color: Colors.grey,
+                                ),
                               ),
-                        loading: () => const SizedBox(width: 100, height: 100, child: Center(child: CircularProgressIndicator())),
-                        error: (_, __) => const Icon(Icons.error, color: Colors.red),
+                        loading: () => const SizedBox(
+                          width: 100,
+                          height: 100,
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (_, _) =>
+                            const Icon(Icons.error, color: Colors.red),
                       );
                     },
                   ),
@@ -248,8 +319,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   else
                     ElevatedButton.icon(
                       icon: const Icon(Icons.upload_file, color: Colors.white),
-                      label: const Text("Changer le Logo", style: TextStyle(color: Colors.white)),
-                      style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondary, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16)),
+                      label: const Text(
+                        "Changer le Logo",
+                        style: TextStyle(color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 16,
+                        ),
+                      ),
                       onPressed: _pickAndUploadLogo,
                     ),
                 ],
@@ -267,7 +347,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildSectionTitle(Icons.link, 'Invitations personnel', 'Générez un lien pour qu’un collaborateur rejoigne votre établissement'),
+                      _buildSectionTitle(
+                        Icons.link,
+                        'Invitations personnel',
+                        'Générez un lien pour qu’un collaborateur rejoigne votre établissement',
+                      ),
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
                         onPressed: _showStaffInviteDialog,
@@ -279,7 +363,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   );
                 },
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
               );
             },
           ),
@@ -288,13 +372,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSectionTitle(Icons.meeting_room, "Salles de Classe", "Configurez les classes disponibles pour les inscriptions"),
+              _buildSectionTitle(
+                Icons.meeting_room,
+                "Salles de Classe",
+                "Configurez les classes disponibles pour les inscriptions",
+              ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text("Ajouter", style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                label: const Text(
+                  "Ajouter",
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
                 onPressed: _addClassroomDialog,
-              )
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -303,20 +396,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               final classesAsync = ref.watch(classroomsProvider);
               return classesAsync.when(
                 data: (classes) {
-                  if (classes.isEmpty) return const Text("Aucune classe configurée.", style: TextStyle(color: AppColors.textSecondary));
+                  if (classes.isEmpty)
+                    return const Text(
+                      "Aucune classe configurée.",
+                      style: TextStyle(color: AppColors.textSecondary),
+                    );
                   return Wrap(
                     spacing: 16,
                     runSpacing: 16,
-                    children: classes.map((c) => Chip(
-                      label: Text(c['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                      onDeleted: () async {
-                        await ref.read(settingsRepositoryProvider).deleteClassroom(c['id']);
-                        ref.invalidate(classroomsProvider);
-                      },
-                      deleteIconColor: Colors.red,
-                      backgroundColor: Colors.white,
-                      side: BorderSide(color: Colors.grey.shade300),
-                    )).toList(),
+                    children: classes
+                        .map(
+                          (c) => Chip(
+                            label: Text(
+                              c['name'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onDeleted: () async {
+                              await ref
+                                  .read(settingsRepositoryProvider)
+                                  .deleteClassroom(c['id']);
+                              ref.invalidate(classroomsProvider);
+                            },
+                            deleteIconColor: Colors.red,
+                            backgroundColor: Colors.white,
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        )
+                        .toList(),
                   );
                 },
                 loading: () => const CircularProgressIndicator(),
@@ -330,27 +438,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _buildSectionTitle(Icons.money, "Frais Scolaires", "Définissez les frais à payer pour l'année en cours"),
+              _buildSectionTitle(
+                Icons.money,
+                "Frais Scolaires",
+                "Définissez les frais à payer pour l'année en cours",
+              ),
               ElevatedButton.icon(
                 icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text("Nouveau Frais", style: TextStyle(color: Colors.white)),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+                label: const Text(
+                  "Nouveau Frais",
+                  style: TextStyle(color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
                 onPressed: _addFeeDialog,
-              )
+              ),
             ],
           ),
           const SizedBox(height: 16),
           Row(
             children: [
-              const Text("Année Scolaire : ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const Text(
+                "Année Scolaire : ",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
               const SizedBox(width: 16),
               Consumer(
                 builder: (context, ref, _) {
                   final y = ref.watch(activeAcademicYearNameProvider);
                   return y.when(
-                    data: (name) => Text(name, style: const TextStyle(fontSize: 16)),
-                    loading: () => const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-                    error: (e, _) => Text('Erreur: $e', style: const TextStyle(color: Colors.red)),
+                    data: (name) =>
+                        Text(name, style: const TextStyle(fontSize: 16)),
+                    loading: () => const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    error: (e, _) => Text(
+                      'Erreur: $e',
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   );
                 },
               ),
@@ -362,7 +490,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               final feesAsync = ref.watch(feesProvider);
               return feesAsync.when(
                 data: (fees) {
-                  if (fees.isEmpty) return const Text("Aucun frais configuré pour cette année.", style: TextStyle(color: AppColors.textSecondary));
+                  if (fees.isEmpty)
+                    return const Text(
+                      "Aucun frais configuré pour cette année.",
+                      style: TextStyle(color: AppColors.textSecondary),
+                    );
                   return ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -372,15 +504,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 12),
                         elevation: 0,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: BorderSide(color: Colors.grey.shade200),
+                        ),
                         child: ListTile(
-                          leading: const CircleAvatar(backgroundColor: AppColors.secondary, child: Icon(Icons.paid, color: Colors.white)),
-                          title: Text(f['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text("Montant: ${f['amount']} FC", style: const TextStyle(color: AppColors.textSecondary)),
+                          leading: const CircleAvatar(
+                            backgroundColor: AppColors.secondary,
+                            child: Icon(Icons.paid, color: Colors.white),
+                          ),
+                          title: Text(
+                            f['name'],
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            "Montant: ${f['amount']} FC",
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                           trailing: IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
                             onPressed: () async {
-                              await ref.read(settingsRepositoryProvider).deleteFee(f['id']);
+                              await ref
+                                  .read(settingsRepositoryProvider)
+                                  .deleteFee(f['id']);
                               ref.invalidate(feesProvider);
                             },
                           ),
@@ -393,7 +541,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 error: (err, _) => Text('Erreur: $err'),
               );
             },
-          )
+          ),
         ],
       ),
     );
@@ -404,17 +552,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       children: [
         Container(
           padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Icon(icon, color: AppColors.primary),
         ),
         const SizedBox(width: 16),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-            Text(subtitle, style: const TextStyle(fontSize: 14, color: AppColors.textSecondary)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+              ),
+            ),
           ],
-        )
+        ),
       ],
     );
   }

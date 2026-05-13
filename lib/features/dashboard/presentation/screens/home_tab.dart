@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/responsive.dart';
+import '../../data/current_staff_profile_provider.dart';
 import '../../../reports/presentation/screens/unpaid_screen.dart'; // import financialReportProvider
 
 class HomeTab extends ConsumerWidget {
@@ -10,9 +11,23 @@ class HomeTab extends ConsumerWidget {
 
   const HomeTab({super.key, this.onNavigate});
 
+  /// Message d’accueil pour les comptes avec fiche `staff` (pas le super-admin plateforme).
+  static String _welcomeTitle(CurrentStaffProfile? profile) {
+    if (profile == null) {
+      return 'Bienvenue sur le portail de ton établissement 👋';
+    }
+    final name = profile.greetingName;
+    final role = profile.portailRolePhrase;
+    if (name.isEmpty) {
+      return 'Bienvenue sur ton portail $role 👋';
+    }
+    return 'Salut $name, bienvenue sur ton portail $role 👋';
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final reportAsync = ref.watch(financialReportProvider);
+    final profileAsync = ref.watch(currentStaffProfileProvider);
     final isMobile = Responsive.isMobile(context);
 
     return SingleChildScrollView(
@@ -20,9 +35,33 @@ class HomeTab extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Bienvenue sur votre portail Admin 👋", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+          profileAsync.when(
+            data: (profile) {
+              final welcome = _welcomeTitle(profile);
+              return Text(
+                welcome,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  height: 1.25,
+                ),
+              );
+            },
+            loading: () => const Text(
+              'Bienvenue 👋',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            error: (_, _) => const Text(
+              'Bienvenue sur le portail de ton établissement 👋',
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+          ),
           const SizedBox(height: 8),
-          const Text("Vue en temps réel des performances de votre établissement.", style: TextStyle(color: AppColors.textSecondary, fontSize: 16)),
+          const Text(
+            'Vue en temps réel des performances de ton établissement.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+          ),
           const SizedBox(height: 32),
 
           reportAsync.when(

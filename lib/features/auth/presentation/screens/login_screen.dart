@@ -6,6 +6,7 @@ import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../invites/data/pending_school_invite_storage.dart';
+import '../../../invites/data/pending_staff_invite_storage.dart';
 import '../../data/auth_repository.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -64,55 +65,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text.trim(),
       );
+      if (!mounted) return;
 
       try {
-        await PendingSchoolInviteStorage.tryCompleteAfterSignIn(
-          ref.read(supabaseClientProvider),
-        );
+        final client = ref.read(supabaseClientProvider);
+        await PendingSchoolInviteStorage.tryCompleteAfterSignIn(client);
+        await PendingStaffInviteStorage.tryCompleteAfterSignIn(client);
       } catch (e) {
-        if (mounted) {
-          await PendingSchoolInviteStorage.clear();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Impossible de finaliser l’invitation : $e. Demandez un nouveau lien à la plateforme.')),
-          );
+        await PendingSchoolInviteStorage.clear();
+        await PendingStaffInviteStorage.clear();
+        if (!mounted) {
+          await authRepo.signOut();
+          return;
         }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Impossible de finaliser l’invitation : $e. '
+              'Demandez un nouveau lien à votre administration ou à la plateforme.',
+            ),
+          ),
+        );
         await authRepo.signOut();
         return;
       }
 
-      // Vérifier l'état de l'utilisateur (Onboarding incomplet, ou client actif)
-      if (mounted) {
-         final status = await authRepo.checkUserStatus();
-         
-         if (status == 'needs_onboarding') {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text(
-                  'Aucune école liée à ce compte. Utilisez le lien d’invitation reçu de la plateforme pour créer l’établissement, '
-                  'ou le lien d’invitation de votre directeur pour rejoindre une équipe.',
-                ),
-                duration: Duration(seconds: 8),
+      if (!mounted) return;
+      final status = await authRepo.checkUserStatus();
+      if (!mounted) return;
+
+      if (status == 'needs_onboarding') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Aucune école liée à ce compte. Utilisez le lien d’invitation reçu de la plateforme pour créer l’établissement, '
+              'ou le lien d’invitation de votre directeur pour rejoindre une équipe.',
+            ),
+            duration: Duration(seconds: 8),
+          ),
+        );
+        await authRepo.signOut();
+      } else if (status == 'platform_admin') {
+        context.go('/platform-admin');
+      } else if (status == 'active') {
+        context.go('/dashboard');
+      } else if (status == 'pending') {
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('🔒 Accès restreint'),
+            content: const Text("Votre établissement est en attente d'activation administrative."),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                  authRepo.signOut();
+                },
+                child: const Text('Compris'),
               ),
-            );
-            await authRepo.signOut();
-         } else if (status == 'platform_admin') {
-            context.go('/platform-admin');
-         } else if (status == 'active') {
-             context.go('/dashboard');
-         } else if (status == 'pending') {
-            showDialog(
-              context: context,
-              barrierDismissible: false,
-              builder: (_) => AlertDialog(
-                title: const Text("🔒 Accès restreint"),
-                content: const Text("Votre établissement est en attente d'activation administrative."),
-                actions: [TextButton(onPressed: () { Navigator.pop(context); authRepo.signOut(); }, child: const Text("Compris"))]
-              )
-            );
-         } else {
-             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Accès refusé.")));
-             authRepo.signOut();
-         }
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Accès refusé.')));
+        await authRepo.signOut();
       }
     } catch (e) {
       if (mounted) {
@@ -185,7 +202,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ],
           const Text('Bienvenue !', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           const SizedBox(height: 8),
-          const Text('Connectez-vous à votre espace établissement.', style: TextStyle(fontSize: 15, color: AppColors.textSecondary)),
+          const Text(
+            'Si vous avez déjà utilisé un lien d’invitation, connectez-vous avec le même e-mail et le même mot de passe.',
+            style: TextStyle(fontSize: 15, color: AppColors.textSecondary),
+          ),
           const SizedBox(height: 48),
           
           CustomTextField(

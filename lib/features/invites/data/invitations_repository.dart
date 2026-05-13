@@ -60,10 +60,11 @@ class InvitationsRepository {
     );
   }
 
+  /// [firstName] / [lastName] optionnels : côté SQL, dérivation depuis `auth.users` si vides (compte existant).
   Future<void> acceptStaffInvitation({
     required String token,
-    required String firstName,
-    required String lastName,
+    String? firstName,
+    String? lastName,
   }) async {
     await _client.rpc(
       'accept_staff_invitation',

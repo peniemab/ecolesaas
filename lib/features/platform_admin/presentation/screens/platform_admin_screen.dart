@@ -8,7 +8,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/data/auth_repository.dart';
 import '../../../invites/data/invitations_repository.dart';
 
-final _schoolInvitesListProvider = FutureProvider<List<Map<String, dynamic>>>((ref) {
+final _schoolInvitesListProvider = FutureProvider<List<Map<String, dynamic>>>((
+  ref,
+) {
   return ref.watch(invitationsRepositoryProvider).listRecentSchoolInvites();
 });
 
@@ -16,7 +18,8 @@ class PlatformAdminScreen extends ConsumerStatefulWidget {
   const PlatformAdminScreen({super.key});
 
   @override
-  ConsumerState<PlatformAdminScreen> createState() => _PlatformAdminScreenState();
+  ConsumerState<PlatformAdminScreen> createState() =>
+      _PlatformAdminScreenState();
 }
 
 class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
@@ -25,7 +28,9 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
   Future<void> _createSchoolInvite() async {
     setState(() => _busy = true);
     try {
-      final token = await ref.read(invitationsRepositoryProvider).createSchoolInvitation();
+      final token = await ref
+          .read(invitationsRepositoryProvider)
+          .createSchoolInvitation();
       final url = buildInviteSchoolUrl(token);
       if (!mounted) return;
       await showDialog<void>(
@@ -39,19 +44,26 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
                 await Clipboard.setData(ClipboardData(text: url));
                 if (ctx.mounted) Navigator.pop(ctx);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lien copié')));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(const SnackBar(content: Text('Lien copié')));
                 }
               },
               child: const Text('Copier'),
             ),
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Fermer'),
+            ),
           ],
         ),
       );
       ref.invalidate(_schoolInvitesListProvider);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur : $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Erreur : $e')));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -105,30 +117,46 @@ class _PlatformAdminScreenState extends ConsumerState<PlatformAdminScreen> {
                 FilledButton.icon(
                   onPressed: _busy ? null : _createSchoolInvite,
                   icon: _busy
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(Icons.add_link),
                   label: const Text('Nouveau lien d’ouverture d’école'),
                 ),
                 const SizedBox(height: 40),
-                const Text('Dernières invitations', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Dernières invitations',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 12),
                 listAsync.when(
                   data: (rows) {
                     if (rows.isEmpty) {
-                      return const Text('Aucune invitation.', style: TextStyle(color: AppColors.textSecondary));
+                      return const Text(
+                        'Aucune invitation.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      );
                     }
                     return ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: rows.length,
-                      separatorBuilder: (_, __) => const Divider(),
+                      separatorBuilder: (_, _) => const Divider(),
                       itemBuilder: (_, i) {
                         final r = rows[i];
                         final used = r['used_at'] != null;
                         return ListTile(
                           title: Text(
                             used ? 'Utilisée' : 'En attente',
-                            style: TextStyle(color: used ? Colors.grey : AppColors.primary, fontWeight: FontWeight.w600),
+                            style: TextStyle(
+                              color: used ? Colors.grey : AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                           subtitle: Text(
                             'Créée : ${r['created_at'] ?? ''}\nExpire : ${r['expires_at'] ?? ''}',
