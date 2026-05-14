@@ -1,14 +1,23 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:sqlite3_flutter_libs/sqlite3_flutter_libs.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'core/local/app_database_provider.dart';
+import 'core/network/offline_banner_host.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (Platform.isAndroid) {
+    await applyWorkaroundToOpenSqlite3OnOldAndroidVersions();
+  }
 
   await dotenv.load(fileName: '.env');
   final supabaseUrl = dotenv.env['SUPABASE_URL']?.trim();
@@ -41,9 +50,12 @@ class SchoolSaaSApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(appDatabaseProvider);
+
     return MaterialApp.router(
       title: 'School SaaS Platform',
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => OfflineBannerHost(child: child),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: AppColors.primary,
